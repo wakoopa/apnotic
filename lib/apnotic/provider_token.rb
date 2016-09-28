@@ -1,3 +1,5 @@
+require 'jwt'
+
 class ProviderToken
 
   ALGORITHM = "ES256".freeze
