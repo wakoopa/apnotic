@@ -27,6 +27,8 @@ module Apnotic
 
       raise "Cert file not found: #{@cert_path}" unless @cert_path && (@cert_path.respond_to?(:read) || File.exist?(@cert_path))
 
+      puts "ssl_context: #{ssl_context}"
+
       @client = NetHttp2::Client.new(@url, ssl_context: ssl_context, connect_timeout: @connect_timeout)
     end
 
@@ -64,22 +66,22 @@ module Apnotic
     private
 
     def ssl_context
-      @ssl_context ||= begin
-        @auth_method == :cert ? build_ssl_context : nil
-      end
+      @auth_method == :cert ? build_ssl_context : nil
     end
 
     def build_ssl_context
-      ctx = OpenSSL::SSL::SSLContext.new
-      begin
-        p12      = OpenSSL::PKCS12.new(certificate, @cert_pass)
-        ctx.key  = p12.key
-        ctx.cert = p12.certificate
-      rescue OpenSSL::PKCS12::PKCS12Error
-        ctx.key  = OpenSSL::PKey::RSA.new(certificate, @cert_pass)
-        ctx.cert = OpenSSL::X509::Certificate.new(certificate)
+      @build_ssl_context ||= begin
+        ctx = OpenSSL::SSL::SSLContext.new
+        begin
+          p12      = OpenSSL::PKCS12.new(certificate, @cert_pass)
+          ctx.key  = p12.key
+          ctx.cert = p12.certificate
+        rescue OpenSSL::PKCS12::PKCS12Error
+          ctx.key  = OpenSSL::PKey::RSA.new(certificate, @cert_pass)
+          ctx.cert = OpenSSL::X509::Certificate.new(certificate)
+        end
+        ctx
       end
-      ctx
     end
 
     def certificate
