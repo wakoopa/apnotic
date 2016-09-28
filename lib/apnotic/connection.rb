@@ -31,7 +31,7 @@ module Apnotic
     end
 
     def push(notification, options={})
-      request  = Apnotic::Request.new(notification)
+      request  = Apnotic::Request.new(notification, request_options)
       response = @client.call(:post, request.path,
         body:    request.body,
         headers: request.headers,
@@ -45,6 +45,9 @@ module Apnotic
     end
 
     def prepare_push(notification)
+      puts '--------------'
+      puts request_options.inspect
+      puts '--------------'
       request       = Apnotic::Request.new(notification, request_options)
       http2_request = @client.prepare_request(:post, request.path,
         body:    request.body,
