@@ -21,6 +21,9 @@ module Apnotic
       @cert_path       = options[:cert_path]
       @cert_pass       = options[:cert_pass]
       @connect_timeout = options[:connect_timeout] || 30
+      @auth_method     = options[:auth_method] || :cert
+      @team_id         = options[:team_id]
+      @key_id          = options[:key_id]
 
       raise "Cert file not found: #{@cert_path}" unless @cert_path && (@cert_path.respond_to?(:read) || File.exist?(@cert_path))
 
@@ -42,7 +45,7 @@ module Apnotic
     end
 
     def prepare_push(notification)
-      request       = Apnotic::Request.new(notification)
+      request       = Apnotic::Request.new(notification, request_options)
       http2_request = @client.prepare_request(:post, request.path,
         body:    request.body,
         headers: request.headers
@@ -62,17 +65,21 @@ module Apnotic
 
     def ssl_context
       @ssl_context ||= begin
-        ctx = OpenSSL::SSL::SSLContext.new
-        begin
-          p12      = OpenSSL::PKCS12.new(certificate, @cert_pass)
-          ctx.key  = p12.key
-          ctx.cert = p12.certificate
-        rescue OpenSSL::PKCS12::PKCS12Error
-          ctx.key  = OpenSSL::PKey::RSA.new(certificate, @cert_pass)
-          ctx.cert = OpenSSL::X509::Certificate.new(certificate)
-        end
-        ctx
+        @auth_method == :cert ? build_ssl_context : nil
       end
+    end
+
+    def build_ssl_context
+      ctx = OpenSSL::SSL::SSLContext.new
+      begin
+        p12      = OpenSSL::PKCS12.new(certificate, @cert_pass)
+        ctx.key  = p12.key
+        ctx.cert = p12.certificate
+      rescue OpenSSL::PKCS12::PKCS12Error
+        ctx.key  = OpenSSL::PKey::RSA.new(certificate, @cert_pass)
+        ctx.cert = OpenSSL::X509::Certificate.new(certificate)
+      end
+      ctx
     end
 
     def certificate
@@ -84,6 +91,17 @@ module Apnotic
           cert = File.read(@cert_path)
         end
         cert
+      end
+    end
+
+    def request_options
+      @request_options ||= begin
+        options = {}
+        if @auth_method == :token
+          token = ProviderToken.new(certificate, @team_id, @key_id).token
+          options.merge!(token: token)
+        end
+        options
       end
     end
   end
