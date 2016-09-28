@@ -11,6 +11,8 @@ class ProviderToken
   end
 
   def token
+    puts payload.inspect
+    puts header_fields.inspect
     JWT.encode(payload, @key, ALGORITHM, header_fields)
   end
 
