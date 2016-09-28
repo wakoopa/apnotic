@@ -5,7 +5,7 @@ module Apnotic
 
     def initialize(notification, options)
       @path    = "/3/device/#{notification.token}"
-      @token   = @options[:token]
+      @token   = options[:token]
       @headers = build_headers_for notification
       @body    = notification.body
     end
