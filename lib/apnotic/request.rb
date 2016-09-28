@@ -21,6 +21,8 @@ module Apnotic
       h.merge!('apns-collapse-id' => notification.apns_collapse_id) if notification.apns_collapse_id
       h.merge!('authorization' => "bearer #{@token}") if @token
       h
+      puts h.inspect
+      h
     end
 
   end
