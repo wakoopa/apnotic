@@ -27,7 +27,6 @@ class ProviderToken
 
   def header_fields
     {
-      alg: ALGORITHM,
       kid: @key_id
     }
   end
